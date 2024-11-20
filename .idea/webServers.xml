@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="b9403da7-3b72-4593-9b73-8fc02f13d777" name="zariab" url="http://ftp.cyborgtech.co">
+        <fileTransfer rootFolder="/public_html/zariab.cyborgtech.co/wp-content/themes/zariab" host="ftp.cyborgtech.co" port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
