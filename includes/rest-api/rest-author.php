@@ -13,7 +13,7 @@ add_action('rest_api_init', function () {
     ]);
 
     // Register route for similar authors with pagination
-    register_rest_route('v1', '/similar_authors', [
+    register_rest_route('v1', '/similar_authors/(?P<slug>[\w-]+)', [
         'methods' => 'GET',
         'callback' => 'get_similar_authors',
         'args' => [
@@ -36,19 +36,27 @@ add_action('rest_api_init', function () {
 });
 
 // Callback for getting all authors
-function get_all_authors() {
+function get_all_authors($request)
+{
+    // Get pagination parameters from the request
+    $page = $request->get_param('page') ?: 1; // Default to page 1
+    $per_page = $request->get_param('per_page') ?: 8; // Default to 8 posts per page
+
     $args = [
         'post_type' => 'author',
-        'posts_per_page' => -1,
+        'posts_per_page' => (int)$per_page,
+        'paged' => (int)$page,
     ];
     $query = new WP_Query($args);
+
+    // Prepare the response
     $authors = [];
     while ($query->have_posts()) {
         $query->the_post();
         $authors[] = [
             'id' => get_the_ID(),
             'title' => get_the_title(),
-            'slug' => get_post_field( 'post_name', get_post() ),
+            'slug' => get_post_field('post_name', get_post()),
             'content' => get_the_content(),
             'featured_image' => get_the_post_thumbnail_url(get_the_ID(), 'full'),
             'meta' => [
@@ -65,11 +73,24 @@ function get_all_authors() {
     }
     wp_reset_postdata();
 
-    return $authors;
+    // Include pagination information in the response
+    $total_posts = $query->found_posts;
+    $total_pages = $query->max_num_pages;
+
+    return [
+        'data' => $authors,
+        'pagination' => [
+            'total_posts' => (int)$total_posts,
+            'total_pages' => (int)$total_pages,
+            'current_page' => (int)$page,
+            'per_page' => (int)$per_page,
+        ],
+    ];
 }
 
 // Callback for getting a single author by slug
-function get_author_by_slug($request) {
+function get_author_by_slug($request)
+{
     $slug = $request['slug'];
     $args = [
         'post_type' => 'author',
@@ -105,24 +126,39 @@ function get_author_by_slug($request) {
 }
 
 // Callback for getting similar authors with pagination
-function get_similar_authors($request) {
+function get_similar_authors($request)
+{
+    // Capture the slug from the route
+    $exclude_slug = $request['slug'];
     $per_page = $request['per_page'];
     $page = $request['page'];
 
+    // Get the post ID of the author with the provided slug
+    $exclude_post = get_posts([
+        'name' => $exclude_slug,
+        'post_type' => 'author',
+        'fields' => 'ids',
+        'posts_per_page' => 1,
+    ]);
+    $exclude_id = !empty($exclude_post) ? $exclude_post[0] : 0;
+
+    // Set up the query to exclude the post with the given slug
     $args = [
         'post_type' => 'author',
         'posts_per_page' => $per_page,
         'paged' => $page,
+        'post__not_in' => [$exclude_id],
     ];
     $query = new WP_Query($args);
 
+    // Prepare the response
     $authors = [];
     while ($query->have_posts()) {
         $query->the_post();
         $authors[] = [
             'id' => get_the_ID(),
             'title' => get_the_title(),
-            'slug' => get_post_field( 'post_name', get_post() ),
+            'slug' => get_post_field('post_name', get_post()),
             'content' => get_the_content(),
             'featured_image' => get_the_post_thumbnail_url(get_the_ID(), 'full'),
             'meta' => [

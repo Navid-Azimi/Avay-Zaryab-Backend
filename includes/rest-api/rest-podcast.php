@@ -5,6 +5,22 @@ add_action('rest_api_init', function () {
     register_rest_route('v1', '/podcasts', [
         'methods' => 'GET',
         'callback' => 'get_all_podcasts',
+        'args' => [
+            'per_page' => [
+                'required' => false,
+                'default' => 10,
+                'validate_callback' => function ($param) {
+                    return is_numeric($param) && $param > 0;
+                },
+            ],
+            'page' => [
+                'required' => false,
+                'default' => 1,
+                'validate_callback' => function ($param) {
+                    return is_numeric($param) && $param > 0;
+                },
+            ],
+        ],
     ]);
 
     // Endpoint: Single podcast by slug
@@ -30,14 +46,20 @@ add_action('rest_api_init', function () {
 });
 
 // Callback: List all podcasts
-function get_all_podcasts()
+function get_all_podcasts($request)
 {
+    $per_page = $request->get_param('per_page'); // Items per page
+    $page = $request->get_param('page');         // Current page
+
     $args = [
         'post_type' => 'podcast',
-        'posts_per_page' => -1,
+        'posts_per_page' => $per_page,
+        'paged' => $page,
     ];
+
     $query = new WP_Query($args);
     $podcasts = [];
+
     while ($query->have_posts()) {
         $query->the_post();
         $podcasts[] = [
@@ -56,7 +78,14 @@ function get_all_podcasts()
         ];
     }
     wp_reset_postdata();
-    return $podcasts;
+
+    return [
+        'podcasts' => $podcasts,
+        'total' => $query->found_posts,         // Total number of podcasts
+        'pages' => $query->max_num_pages,       // Total number of pages
+        'current_page' => (int)$page,          // Current page
+        'per_page' => (int)$per_page,          // Number of podcasts per page
+    ];
 }
 
 // Callback: Single podcast by slug
@@ -85,7 +114,7 @@ function get_podcast_by_slug($request)
             'guest_name' => get_post_meta(get_the_ID(), 'guest_name', true),
             'audio_file' => get_post_meta(get_the_ID(), 'audio_file', true),
             'podcast_date_shamsi' => get_post_meta(get_the_ID(), 'podcast_date_shamsi', true),
-            'podcast_duration' => get_post_meta(get_the_ID(), 'podcast_duration', true),  ],
+            'podcast_duration' => get_post_meta(get_the_ID(), 'podcast_duration', true),],
     ];
     wp_reset_postdata();
     return $podcast;
@@ -117,7 +146,7 @@ function get_similar_podcasts($request)
                 'guest_name' => get_post_meta(get_the_ID(), 'guest_name', true),
                 'audio_file' => get_post_meta(get_the_ID(), 'audio_file', true),
                 'podcast_date_shamsi' => get_post_meta(get_the_ID(), 'podcast_date_shamsi', true),
-                'podcast_duration' => get_post_meta(get_the_ID(), 'podcast_duration', true),    ],
+                'podcast_duration' => get_post_meta(get_the_ID(), 'podcast_duration', true),],
         ];
     }
     wp_reset_postdata();
