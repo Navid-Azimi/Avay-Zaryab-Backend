@@ -1,4 +1,31 @@
 <?php
+/**
+ * Retrieves a list of poems with pagination support.
+ *
+ * This function queries the 'poem' post type and returns a paginated list of poems.
+ * It includes details such as the poem's title, excerpt, author information, featured image,
+ * publication date, reading time, categories, and slug.
+ *
+ * @param array $data An associative array containing query parameters.
+ *                    - 'per_page' (int): The number of poems to return per page. Defaults to 10.
+ *                    - 'page' (int): The page number to retrieve. Defaults to 1.
+ *
+ * @return array An associative array containing:
+ *               - 'current_page' (int): The current page number.
+ *               - 'total_pages' (int): The total number of pages available.
+ *               - 'total_posts' (int): The total number of poems found.
+ *               - 'poems' (array): An array of poems, each containing:
+ *                   - 'ID' (int): The poem ID.
+ *                   - 'title' (string): The poem title.
+ *                   - 'excerpt' (string): The poem excerpt.
+ *                   - 'author' (array|null): The author details or null if not available.
+ *                   - 'author_id' (int): The ID of the post author.
+ *                   - 'featured_image' (string|null): The URL of the featured image or null if not available.
+ *                   - 'shamsi_date' (string|null): The publication date in Shamsi calendar or null if not available.
+ *                   - 'time' (string|null): The estimated reading time or null if not available.
+ *                   - 'categories' (array): An array of category names.
+ *                   - 'slug' (string): The poem slug.
+ */
 function get_poems_list($data)
 {
     // Get the per_page and page parameters from the request
@@ -48,11 +75,14 @@ function get_poems_list($data)
                 ];
             }
 
+            $content = apply_filters('the_content', get_the_content());
+            $content_array = explode('<br />', $content);
+
             // Get poem details
             $poem = [
                 'ID' => get_the_ID(),
                 'title' => get_the_title(),
-                'excerpt' => get_the_excerpt(),
+                'content_array' => $content_array,
                 'author' => $author,
                 'author_id' => get_post_field('post_author', get_the_ID()),
                 'featured_image' => get_the_post_thumbnail_url(),
@@ -73,6 +103,7 @@ function get_poems_list($data)
         'poems' => $poems,
     ];
 }
+
 
 function register_poem_api_endpoints()
 {
@@ -116,6 +147,8 @@ function get_single_poem_by_slug($data)
     // Check if we found the poem
     if ($poem_query->have_posts()) {
         $poem_query->the_post();
+
+        
 
         // Get the related author information (assuming 'poem_author' is a custom field linking to author post)
         $author_id = get_post_meta(get_the_ID(), '_poem_author', true);
@@ -253,12 +286,14 @@ function get_similar_poems($data) {
         // Get categories
         $categories = get_poem_categories(get_the_ID());
 
+        $content = apply_filters('the_content', get_the_content());
+        $content_array = explode('<br />', $content);
         // Prepare poem data
         $similar_poems[] = [
             'featured_image' => get_the_post_thumbnail_url(),
             'slug' => get_post_field('post_name', get_the_ID()),
             'title' => get_the_title(),
-            'excerpt' => get_the_excerpt(),
+            'content_array' => $content_array,
             'author' => $author_name,
             'shamsi_date' => get_post_meta(get_the_ID(), '_publish_date', true),
             'time' => get_post_meta(get_the_ID(), '_read_time', true),

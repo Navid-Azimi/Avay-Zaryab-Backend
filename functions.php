@@ -14,3 +14,9 @@ function zariab_get_authors()
         'order'       => 'ASC',
     ]);
 }
+
+
+add_action('init', 'register_story_post_type', 5);  // Higher priority to load early
+add_action('init', 'register_poem_post_type', 5);
+
+add_action('add_meta_boxes', 'add_episode_meta_box', 15);  // Lower priority

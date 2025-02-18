@@ -2,8 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="b9403da7-3b72-4593-9b73-8fc02f13d777" name="zariab" url="http://45.8.148.189">
-        <fileTransfer rootFolder="/public_html/zariab.cyborgtech.co/wp-content/themes/zariab" host="45.8.148.189" port="21">
+      <webServer id="c752d6d4-f0d4-4935-babd-7843b7c93944" name="zaryab" url="http://45.8.148.189">
+        <fileTransfer host="45.8.148.189" port="21">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
